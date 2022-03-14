@@ -2,19 +2,20 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "3.59.0"
-      # configuration_aliases = [aws.alternate]
+      version = "4.5.0"
+      configuration_aliases = [aws.alternate]
     }
   }
 
-  backend "remote" {
-    organization = "rnd174"
-    workspaces {
-      name = "provisioners"
-    }
-  }
+  # backend "remote" {
+  #   organization = "rnd174"
+  #   workspaces {
+  #     name = "provisioners"
+  #   }
+  # }
 
 }
+
 
 data "template_file" "user_data" {
   template = file("./userdata.yaml")
@@ -23,8 +24,8 @@ provider "aws" {
   # Configuration options
   profile = "default"
   region  = "us-east-1"
-  # shared_config_files      = ["~/.aws/per/conf"]
-  # shared_credentials_files = ["~/.aws/per/credentials"]
+  shared_config_files      = ["~/.aws/per/config"]
+  shared_credentials_files = ["~/.aws/per/credentials"]
 }
 
 resource "aws_key_pair" "deployer" {
@@ -38,6 +39,19 @@ resource "aws_instance" "MyServer" {
   key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.my_sg_server.id]
   user_data              = data.template_file.user_data.rendered
+
+  # connection {
+  #   type     = "ssh"
+  #   user     = "root"
+  #   private_key = "${file()}"
+  #   host     = "${self.public_ip}"
+  # }
+
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "echo ${self.private_ip} >> /home/ec2-user/private_ips.txt",
+  #   ]
+  # }
   tags = {
     Name = "MyServer"
   }
@@ -70,7 +84,7 @@ resource "aws_security_group" "my_sg_server" {
       from_port        = 22
       to_port          = 22
       protocol         = "tcp"
-      cidr_blocks      = ["49.37.174.181/32"]
+      cidr_blocks      = ["49.37.170.73/32"]
       ipv6_cidr_blocks = []
       prefix_list_ids  = []
       security_groups  = []
