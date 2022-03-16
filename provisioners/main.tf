@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "4.5.0"
+      source                = "hashicorp/aws"
+      version               = "4.5.0"
       configuration_aliases = [aws.alternate]
     }
   }
@@ -15,15 +15,17 @@ terraform {
   # }
 
 }
-
+locals {
+  file_name = "~/.ssh/terraform"
+}
 
 data "template_file" "user_data" {
   template = file("./userdata.yaml")
 }
 provider "aws" {
   # Configuration options
-  profile = "default"
-  region  = "us-east-1"
+  profile                  = "default"
+  region                   = "us-east-1"
   shared_config_files      = ["~/.aws/per/config"]
   shared_credentials_files = ["~/.aws/per/credentials"]
 }
@@ -40,18 +42,20 @@ resource "aws_instance" "MyServer" {
   vpc_security_group_ids = [aws_security_group.my_sg_server.id]
   user_data              = data.template_file.user_data.rendered
 
-  # connection {
-  #   type     = "ssh"
-  #   user     = "root"
-  #   private_key = "${file()}"
-  #   host     = "${self.public_ip}"
-  # }
 
-  # provisioner "remote-exec" {
-  #   inline = [
-  #     "echo ${self.private_ip} >> /home/ec2-user/private_ips.txt",
-  #   ]
-  # }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo ${self.private_ip} >> /home/ec2-user/private_ips.txt",
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = "${file("/Users/i350766/.ssh/terraform")}"
+      host        = self.public_ip
+    }
+  }
   tags = {
     Name = "MyServer"
   }
