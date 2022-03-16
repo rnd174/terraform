@@ -17,12 +17,18 @@ provider "aws" {
 }
 
 resource "aws_instance" "MyServer" {
-  ami = "ami-0c293f3f676ec4f90"
-  count  = 2
-  instance_type = "t2.micro"
+  ami   = "ami-0c293f3f676ec4f90"
+
+  for_each = {
+    nano  = "t2.nano"
+    small = "t2.small"
+    micro = "t2.micro"
+  }
+
+  instance_type = "${each.value}"
 
   tags = {
-    Name = "MyServer-${count.index}"
+    Name = "MyServer-${each.key}"
   }
 }
 
